@@ -1,11 +1,11 @@
-import jwt from "jsonwebtoken";
-import { db } from "../config/db";
-import bcrypt from "bcrypt";
-import { v4 as uuidv4 } from "uuid";
-import dotenv from "dotenv";
+const jwt = require("jsonwebtoken");
+const { db } = require("../config/database");
+const bcrypt = require("bcrypt");
+const { v4: uuidv4 } = require("uuid");
+const dotenv = require("dotenv");
 dotenv.config();
 
-export class AuthService {
+class AuthService {
 	generateToken(userId, email, name) {
 		const payload = { userId, email, name };
 		const secret = process.env.JWT_SECRET || "default-secret";
@@ -85,3 +85,5 @@ export class AuthService {
 		return { userId: updatedUser.id };
 	}
 }
+
+module.exports = { AuthService };
