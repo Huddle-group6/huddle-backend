@@ -12,7 +12,7 @@ const pgp = pgPromise({
 });
 
 const connectionString =
-	process.env.DATABASE_URL || "postgresql://localhost:5432/eventful";
+	process.env.DATABASE_URL || "postgresql://localhost:5432/huddle";
 
 const db = pgp(connectionString);
 

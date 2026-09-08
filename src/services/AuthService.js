@@ -45,8 +45,8 @@ class AuthService {
 		const hashedPassword = await bcrypt.hash(password, 10);
 
 		const newUser = await db.one(
-			"INSERT INTO users (id, name, email, password) VALUES ($1, $2, $3, $4) RETURNING id",
-			[uuidv4(), name, email, hashedPassword],
+			"INSERT INTO users ( name, email, password) VALUES ($1, $2, $3) RETURNING id",
+			[name, email, hashedPassword],
 		);
 
 		const token = this.generateToken(newUser.id, email, name);
@@ -73,11 +73,73 @@ class AuthService {
 		return { token, refreshToken, userId: user.id };
 	}
 
-	async updateUser(userId, name, email, password) {
-		const hashedPassword = await bcrypt.hash(password, 10);
+	async refreshToken(refreshToken) {
+		const secret = process.env.REFRESH_TOKEN_SECRET || "default-refresh-secret";
+		try {
+			const payload = jwt.verify(refreshToken, secret);
+			const newToken = this.generateToken(
+				payload.userId,
+				payload.email,
+				payload.name,
+			);
+			const newRefreshToken = this.generateRefreshToken(payload.userId);
+			return {
+				token: newToken,
+				refreshToken: newRefreshToken,
+				userId: payload.userId,
+			};
+		} catch (err) {
+			throw new Error("Invalid refresh token", 400);
+		}
+	}
+
+	async getProfile(userId) {
+		const user = await db.oneOrNone(
+			"SELECT id, name, email, phone FROM users WHERE id = $1",
+			[userId],
+		);
+		if (!user) {
+			throw new Error("User not found", 404);
+		}
+		return user;
+	}
+
+	async updateUser(userId, name, email) {
 		const updatedUser = await db.oneOrNone(
-			"UPDATE users SET name = $1, email = $2, password = $3 WHERE id = $4 RETURNING id",
-			[name, email, hashedPassword, userId],
+			"UPDATE users SET name = $1, email = $2 WHERE id = $3 RETURNING id",
+			[name, email, userId],
+		);
+		if (!updatedUser) {
+			throw new Error("User not found", 404);
+		}
+		return { userId: updatedUser.id };
+	}
+
+	async changePassword(userId, oldPassword, newPassword) {
+		const user = await db.oneOrNone(
+			"SELECT id, password FROM users WHERE id = $1",
+			[userId],
+		);
+		if (!user) {
+			throw new Error("User not found", 404);
+		}
+
+		const isOldPasswordValid = await bcrypt.compare(oldPassword, user.password);
+		if (!isOldPasswordValid) {
+			throw new Error("Old password is incorrect", 400);
+		}
+
+		if (oldPassword === newPassword) {
+			throw new Error(
+				"New password must be different from the old password",
+				400,
+			);
+		}
+
+		const hashedNewPassword = await bcrypt.hash(newPassword, 10);
+		const updatedUser = await db.oneOrNone(
+			"UPDATE users SET password = $1 WHERE id = $2 RETURNING id",
+			[hashedNewPassword, userId],
 		);
 		if (!updatedUser) {
 			throw new Error("User not found", 404);
