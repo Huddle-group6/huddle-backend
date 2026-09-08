@@ -6,6 +6,7 @@ const {
 	validateLoginInput,
 	validateUpdateProfileInput,
 	validateChangePasswordInput,
+	authValidation,
 } = require("../middlewares/AuthValidation");
 
 const router = express.Router();
@@ -19,17 +20,19 @@ router.post(
 );
 router.post("/login", parseFormData, validateLoginInput, AuthController.login);
 router.post("/refresh-token", AuthController.refreshToken);
-router.get("/profile", AuthController.getProfile);
+router.get("/profile", authValidation, AuthController.getProfile);
 router.put(
 	"/update-profile",
 	parseFormData,
 	validateUpdateProfileInput,
+	authValidation,
 	AuthController.updateProfile,
 );
 router.put(
 	"/change-password",
 	parseFormData,
 	validateChangePasswordInput,
+	authValidation,
 	AuthController.changePassword,
 );
 

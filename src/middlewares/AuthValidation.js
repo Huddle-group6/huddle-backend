@@ -12,7 +12,7 @@ const authValidation = (req, res, next) => {
 	const token = authHeader.split(" ")[1];
 	try {
 		const decoded = authService.verifyToken(token);
-		req.user = decoded; // Attach decoded user info to request object
+		req.user = { ...decoded, id: decoded.id || decoded.userId };
 		next();
 	} catch (error) {
 		return res.status(401).json({ message: "Invalid or expired token." });

@@ -1,6 +1,13 @@
 const { body, validationResult } = require("express-validator");
 const { AuthService } = require("../../services/AuthService");
 
+class AppError extends Error {
+	constructor(message, statusCode) {
+		super(message);
+		this.statusCode = statusCode;
+	}
+}
+
 const authService = new AuthService();
 
 const AuthController = {
