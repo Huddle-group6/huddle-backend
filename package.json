@@ -1,27 +1,38 @@
 {
-  "name": "huddle-backend",
-  "version": "0.1.0",
-  "description": "Huddle backend — authentication + channel messaging (Sprint 1).",
-  "main": "src/server.js",
-  "private": true,
-  "engines": {
-    "node": ">=18.0.0"
-  },
-  "scripts": {
-    "dev": "nodemon src/server.js",
-    "start": "node src/server.js",
-    "migrate": "node-pg-migrate",
-    "migrate:up": "node-pg-migrate up",
-    "migrate:down": "node-pg-migrate down"
-  },
-  "dependencies": {
-    "cors": "^2.8.5",
-    "dotenv": "^16.4.5",
-    "express": "^4.19.2",
-    "node-pg-migrate": "^9.0.0",
-    "pg": "^8.23.0"
-  },
-  "devDependencies": {
-    "nodemon": "^3.1.4"
-  }
+	"name": "huddle-backend",
+	"version": "0.1.0",
+	"description": "Huddle backend — authentication + channel messaging (Sprint 1).",
+	"main": "src/server.js",
+	"private": true,
+	"engines": {
+		"node": ">=18.0.0"
+	},
+	"scripts": {
+		"dev": "nodemon src/server.js",
+		"start": "node src/server.js",
+		"migrate": "node-pg-migrate",
+		"migrate:up": "node-pg-migrate up",
+		"migrate:down": "node-pg-migrate down",
+		"test": "jest --runInBand --testMatch=\"**/*.tests.js\""
+	},
+	"dependencies": {
+		"bcrypt": "^6.0.0",
+		"body-parser": "^2.3.0",
+		"cors": "^2.8.5",
+		"dotenv": "^16.4.5",
+		"express": "^4.19.2",
+		"express-validator": "^7.3.2",
+		"jsonwebtoken": "^9.0.3",
+		"multer": "^2.3.0",
+		"node-pg-migrate": "^9.0.0",
+		"pg": "^8.23.0",
+		"pg-promise": "^12.7.1",
+		"promise-pg": "^0.1.1",
+		"uuid": "^14.0.2"
+	},
+	"devDependencies": {
+		"jest": "^30.5.1",
+		"nodemon": "^3.1.4",
+		"supertest": "^7.2.2"
+	}
 }
