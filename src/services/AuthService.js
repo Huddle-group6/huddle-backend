@@ -1,149 +1,101 @@
 const jwt = require("jsonwebtoken");
-const { db } = require("../config/database");
 const bcrypt = require("bcrypt");
-const dotenv = require("dotenv");
-dotenv.config();
+const prisma = require("../config/database");
+const env = require("../config/env");
+const AppError = require("../utils/AppError");
+
+const SAFE_USER_FIELDS = { id: true, name: true, email: true, createdAt: true };
 
 class AuthService {
 	generateToken(userId, email, name) {
-		const payload = { userId, email, name };
-		const secret = process.env.JWT_SECRET || "default-secret";
-		const options = {
-			expiresIn: process.env.JWT_EXPIRES_IN || "1d",
-		};
-		return jwt.sign(payload, secret, options);
-	}
-
-	generateRefreshToken(userId) {
-		const payload = { userId };
-		const secret = process.env.REFRESH_TOKEN_SECRET || "default-refresh-secret";
-		const options = {
-			expiresIn: process.env.REFRESH_TOKEN_EXPIRES_IN || "1d",
-		};
-		return jwt.sign(payload, secret, options);
+		return jwt.sign({ userId, email, name }, env.jwtSecret, {
+			expiresIn: env.jwtExpiresIn,
+		});
 	}
 
 	verifyToken(token) {
-		const secret = process.env.JWT_SECRET || "default-secret";
-		try {
-			return jwt.verify(token, secret);
-		} catch (err) {
-			return null;
-		}
+		// Let this throw — callers decide how to translate a bad/expired
+		// token into a response instead of silently getting `null` back.
+		return jwt.verify(token, env.jwtSecret);
 	}
 
 	async registerUser(name, email, password) {
-		const existingUser = await db.oneOrNone(
-			"SELECT id FROM users WHERE email = $1",
-			[email],
-		);
+		const existingUser = await prisma.user.findUnique({ where: { email } });
 		if (existingUser) {
-			throw new Error("User already exists", 400);
+			throw new AppError("User already exists", 409);
 		}
 
-		const hashedPassword = await bcrypt.hash(password, 10);
+		const passwordHash = await bcrypt.hash(password, 10);
+		const user = await prisma.user.create({
+			data: { name, email, passwordHash },
+			select: SAFE_USER_FIELDS,
+		});
 
-		const newUser = await db.one(
-			"INSERT INTO users ( name, email, password) VALUES ($1, $2, $3) RETURNING id",
-			[name, email, hashedPassword],
-		);
-
-		const token = this.generateToken(newUser.id, email, name);
-		const refreshToken = this.generateRefreshToken(newUser.id);
-		return { token, refreshToken, userId: newUser.id };
+		const token = this.generateToken(user.id, user.email, user.name);
+		return { token, user };
 	}
 
 	async loginUser(email, password) {
-		const user = await db.oneOrNone(
-			"SELECT id, name, email, password FROM users WHERE email = $1",
-			[email],
-		);
-		if (!user) {
-			throw new Error("These credentials do not match our records.", 400);
-		}
-
-		const isPasswordValid = await bcrypt.compare(password, user.password);
-		if (!isPasswordValid) {
-			throw new Error("These credentials do not match our records.", 400);
+		const user = await prisma.user.findUnique({ where: { email } });
+		// Same message either way — don't tell an attacker whether the
+		// email exists (PRD A2: "generic invalid credentials error").
+		if (!user || !(await bcrypt.compare(password, user.passwordHash))) {
+			throw new AppError("These credentials do not match our records.", 401);
 		}
 
 		const token = this.generateToken(user.id, user.email, user.name);
-		const refreshToken = this.generateRefreshToken(user.id);
-		return { token, refreshToken, userId: user.id };
-	}
-
-	async refreshToken(refreshToken) {
-		const secret = process.env.REFRESH_TOKEN_SECRET || "default-refresh-secret";
-		try {
-			const payload = jwt.verify(refreshToken, secret);
-			const newToken = this.generateToken(
-				payload.userId,
-				payload.email,
-				payload.name,
-			);
-			const newRefreshToken = this.generateRefreshToken(payload.userId);
-			return {
-				token: newToken,
-				refreshToken: newRefreshToken,
-				userId: payload.userId,
-			};
-		} catch (err) {
-			throw new Error("Invalid refresh token", 400);
-		}
+		return {
+			token,
+			user: { id: user.id, name: user.name, email: user.email, createdAt: user.createdAt },
+		};
 	}
 
 	async getProfile(userId) {
-		const user = await db.oneOrNone(
-			"SELECT id, name, email, phone FROM users WHERE id = $1",
-			[userId],
-		);
+		const user = await prisma.user.findUnique({
+			where: { id: userId },
+			select: SAFE_USER_FIELDS,
+		});
 		if (!user) {
-			throw new Error("User not found", 404);
+			throw new AppError("User not found", 404);
 		}
 		return user;
 	}
 
+	// Not routed this sprint (profile editing is a backlog item) — kept
+	// working and ported to Prisma so it isn't dead code waiting to break
+	// the moment someone re-enables the route.
 	async updateUser(userId, name, email) {
-		const updatedUser = await db.oneOrNone(
-			"UPDATE users SET name = $1, email = $2 WHERE id = $3 RETURNING id",
-			[name, email, userId],
-		);
-		if (!updatedUser) {
-			throw new Error("User not found", 404);
+		try {
+			const user = await prisma.user.update({
+				where: { id: userId },
+				data: { name, email },
+				select: SAFE_USER_FIELDS,
+			});
+			return user;
+		} catch (err) {
+			if (err.code === "P2025") throw new AppError("User not found", 404);
+			throw err;
 		}
-		return { userId: updatedUser.id };
 	}
 
+	// Not routed this sprint (password reset is a backlog item) — same as above.
 	async changePassword(userId, oldPassword, newPassword) {
-		const user = await db.oneOrNone(
-			"SELECT id, password FROM users WHERE id = $1",
-			[userId],
-		);
+		const user = await prisma.user.findUnique({ where: { id: userId } });
 		if (!user) {
-			throw new Error("User not found", 404);
+			throw new AppError("User not found", 404);
 		}
 
-		const isOldPasswordValid = await bcrypt.compare(oldPassword, user.password);
+		const isOldPasswordValid = await bcrypt.compare(oldPassword, user.passwordHash);
 		if (!isOldPasswordValid) {
-			throw new Error("Old password is incorrect", 400);
+			throw new AppError("Old password is incorrect", 400);
 		}
-
 		if (oldPassword === newPassword) {
-			throw new Error(
-				"New password must be different from the old password",
-				400,
-			);
+			throw new AppError("New password must be different from the old password", 400);
 		}
 
-		const hashedNewPassword = await bcrypt.hash(newPassword, 10);
-		const updatedUser = await db.oneOrNone(
-			"UPDATE users SET password = $1 WHERE id = $2 RETURNING id",
-			[hashedNewPassword, userId],
-		);
-		if (!updatedUser) {
-			throw new Error("User not found", 404);
-		}
-		return { userId: updatedUser.id };
+		const passwordHash = await bcrypt.hash(newPassword, 10);
+		await prisma.user.update({ where: { id: userId }, data: { passwordHash } });
+		return { userId };
 	}
 }
 

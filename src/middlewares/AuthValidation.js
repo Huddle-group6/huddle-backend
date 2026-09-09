@@ -12,7 +12,7 @@ const authValidation = (req, res, next) => {
 	const token = authHeader.split(" ")[1];
 	try {
 		const decoded = authService.verifyToken(token);
-		req.user = { ...decoded, id: decoded.id || decoded.userId };
+		req.user = { id: decoded.userId, email: decoded.email, name: decoded.name };
 		next();
 	} catch (error) {
 		return res.status(401).json({ message: "Invalid or expired token." });
@@ -53,15 +53,12 @@ const validateLoginInput = (req, res, next) => {
 	if (!password) {
 		return res.status(400).json({ message: "Password is required" });
 	}
-	if (password.length < 8) {
-		return res
-			.status(400)
-			.json({ message: "Password must be at least 8 characters long" });
-	}
 
 	next();
 };
 
+// Kept for when profile editing / password reset come off the backlog —
+// not wired into any route this sprint.
 const validateUpdateProfileInput = (req, res, next) => {
 	const { name, email } = req.body || {};
 	if (!name) {

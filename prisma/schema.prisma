@@ -1,0 +1,66 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider  = "postgresql"
+  url       = env("DATABASE_URL") // Supabase Transaction Pooler (port 6543) — used by the running app
+  directUrl = env("DIRECT_URL")   // Supabase Session Pooler (port 5432) — used only by `prisma migrate`
+}
+
+// --- Appendix B: Minimal Data Model ---------------------------------------
+
+model User {
+  id           Int      @id @default(autoincrement())
+  name         String   @db.VarChar(100)
+  email        String   @unique @db.VarChar(255)
+  passwordHash String   @map("password_hash")
+  createdAt    DateTime @default(now()) @map("created_at")
+
+  createdChannels Channel[]           @relation("ChannelCreator")
+  memberships     ChannelMembership[]
+  messages        Message[]
+
+  @@map("users")
+}
+
+model Channel {
+  id          Int      @id @default(autoincrement())
+  name        String   @unique @db.VarChar(64)
+  description String?  @db.VarChar(280)
+  createdBy   Int      @map("created_by")
+  createdAt   DateTime @default(now()) @map("created_at")
+
+  creator     User                @relation("ChannelCreator", fields: [createdBy], references: [id], onDelete: Cascade)
+  memberships ChannelMembership[]
+  messages    Message[]
+
+  @@map("channels")
+}
+
+model ChannelMembership {
+  id        Int      @id @default(autoincrement())
+  userId    Int      @map("user_id")
+  channelId Int      @map("channel_id")
+  joinedAt  DateTime @default(now()) @map("joined_at")
+
+  user    User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  channel Channel @relation(fields: [channelId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, channelId])
+  @@map("channel_memberships")
+}
+
+model Message {
+  id        Int      @id @default(autoincrement())
+  body      String   @db.Text
+  userId    Int      @map("user_id")
+  channelId Int      @map("channel_id")
+  createdAt DateTime @default(now()) @map("created_at")
+
+  user    User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  channel Channel @relation(fields: [channelId], references: [id], onDelete: Cascade)
+
+  @@index([channelId, createdAt])
+  @@map("messages")
+}

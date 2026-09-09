@@ -1,29 +1,9 @@
-const pgPromise = require("pg-promise");
+const { PrismaClient } = require("@prisma/client");
 
-const pgp = pgPromise({
-	error(err, e) {
-		if (e.cn) {
-			console.error("Database connection error:", err);
-		}
-		if (e.query) {
-			console.error("Query error:", err);
-		}
-	},
+// A single shared client — creating a new PrismaClient per request/module
+// exhausts Supabase's pooled connection limit fast.
+const prisma = new PrismaClient({
+	log: process.env.NODE_ENV === "production" ? ["error"] : ["error", "warn"],
 });
 
-const connectionString =
-	process.env.DATABASE_URL || "postgresql://localhost:5432/huddle";
-
-const db = pgp(connectionString);
-
-// Test connection
-db.connect()
-	.then((obj) => {
-		obj.done();
-		console.log("Database connection established");
-	})
-	.catch((error) => {
-		console.error("Database connection failed:", error);
-	});
-
-module.exports = { db, pgp };
+module.exports = prisma;
