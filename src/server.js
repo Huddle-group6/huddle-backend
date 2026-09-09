@@ -1,28 +1,29 @@
 require("dotenv").config();
+const env = require("./config/env");
 const createApp = require("./app");
+const prisma = require("./config/database");
 
-const { db } = require("./config/database");
+async function main() {
+	const app = createApp();
 
-const PORT = process.env.PORT || 4000;
-const app = createApp();
+	await prisma.$queryRaw`SELECT 1`;
+	console.log("✅ Database connected successfully");
 
-const startServer = async () => {
-	try {
-		// Test database connection
-		await db.one("SELECT NOW()");
-		console.log("✅ Database connected successfully");
+	app.listen(env.port, () => {
+		console.log(`Huddle API listening on port ${env.port}`);
+	});
 
-		// Start server
-		app.listen(PORT, () => {
-			console.log(`Huddle API listening on port ${PORT}`);
-		});
-	} catch (error) {
-		console.error("Failed to start server:", error);
-		process.exit(1);
-	}
-	// app.listen(PORT, () => {
-	//   console.log(`Huddle API listening on port ${PORT}`);
-	// });
-};
+	const shutdown = (signal) => {
+		console.log(`${signal} received — shutting down gracefully.`);
+		prisma.$disconnect().finally(() => process.exit(0));
+		setTimeout(() => process.exit(1), 10_000).unref();
+	};
 
-startServer();
+	process.on("SIGTERM", () => shutdown("SIGTERM"));
+	process.on("SIGINT", () => shutdown("SIGINT"));
+}
+
+main().catch((err) => {
+	console.error("Failed to start server:", err);
+	process.exit(1);
+});
