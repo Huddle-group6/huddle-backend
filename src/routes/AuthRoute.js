@@ -15,9 +15,10 @@ router.post("/login", validateLoginInput, AuthController.login);
 router.get("/profile", authValidation, AuthController.getProfile);
 
 // Deferred to Product Backlog per the PRD (profile editing / password
-// reset are explicitly out of Sprint 1 scope). Controller + service logic
-// is implemented and Prisma-ported — just uncomment when the story is
-// picked up, no rework needed.
+// reset are out of Sprint 1 scope). Controller + service logic
+// is implemented and Prisma-ported.
+// I commented the codes so as not to trow them away. Just uncomment
+// when the story is picked up, no rework needed.
 //
 // router.put(
 // 	"/update-profile",
