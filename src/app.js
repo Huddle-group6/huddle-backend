@@ -1,6 +1,7 @@
 const express = require("express");
 const cors = require("cors");
 const authRoutes = require("./routes/AuthRoute");
+const channelRoutes = require("./routes/ChannelRoute");
 
 function createApp() {
 	const app = express();
@@ -13,6 +14,7 @@ function createApp() {
 	});
 
 	app.use("/api/auth", authRoutes);
+	app.use("/api/channels", channelRoutes);
 
 	// eslint-disable-next-line no-unused-vars
 	app.use((error, _req, res, _next) => {
