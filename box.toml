@@ -1,0 +1,28 @@
+# Runbox box declaration
+# https://github.com/dominionthedev/runbox
+schema_version = 1
+
+[box]
+name = "huddle"
+lifecycle = "persistent"
+interactive = true
+shell = "/bin/zsh"
+
+[network]
+mode = "deny"
+allowlist = ["registry.npmjs.org:443", "github.com:443"]
+dns = "localhost-only"
+
+[permissions]
+read = ["/Users/appleplay/.local", "/opt/local", "/usr/local/bin"]
+write = []
+
+[env]
+path_extra = [
+  "/opt/local/bin",
+  "/opt/local/sbin",
+  "/usr/local/bin",
+  "/Users/appleplay/.local/bin",
+  "/Users/appleplay/.local/share/nvm/versions/node/v22.23.2/bin",
+]
+set = { NVM_DIR = "/Users/appleplay/.local/share/nvm" }

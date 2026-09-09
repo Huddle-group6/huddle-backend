@@ -1,0 +1,10 @@
+schema_version = 1
+box_name = "huddle"
+account_name = "_runbox_393d7ffd"
+runbox_version = "0.1.0"
+created_at = "1788883569"
+locked_at = "1788883569"
+lifecycle = "Persistent"
+interactive = true
+config_hash = "c7ffe33939b1b5840bf74b42553e35370382b63cfcc87c264a67bf4e777d25b2"
+setup_assets_hash = "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
