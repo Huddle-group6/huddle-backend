@@ -24,12 +24,18 @@ model User {
   @@map("users")
 }
 
+enum ChannelStatus {
+  ACTIVE
+  CLOSED
+}
+
 model Channel {
-  id          Int      @id @default(autoincrement())
-  name        String   @unique @db.VarChar(64)
-  description String?  @db.VarChar(280)
-  createdBy   Int      @map("created_by")
-  createdAt   DateTime @default(now()) @map("created_at")
+  id          Int           @id @default(autoincrement())
+  name        String        @unique @db.VarChar(64)
+  description String?      @db.VarChar(280)
+  createdBy   Int           @map("created_by")
+  status      ChannelStatus @default(ACTIVE)
+  createdAt   DateTime      @default(now()) @map("created_at")
 
   creator     User                @relation("ChannelCreator", fields: [createdBy], references: [id], onDelete: Cascade)
   memberships ChannelMembership[]

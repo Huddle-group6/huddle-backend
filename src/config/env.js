@@ -4,7 +4,7 @@ const required = ["JWT_SECRET", "DATABASE_URL"];
 const missing = required.filter((key) => !process.env[key]);
 if (missing.length) {
 	// A missing secret should crash on boot, not silently sign tokens with
-	// a public fallback string that's sitting right here in the source.
+	// a public fallback string.
 	throw new Error(`Missing required environment variable(s): ${missing.join(", ")}`);
 }
 
