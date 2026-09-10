@@ -5,6 +5,7 @@ const swaggerSpec = require("./config/swagger");
 const env = require("./config/env");
 const authRoutes = require("./routes/AuthRoute");
 const channelRoutes = require("./routes/ChannelRoute");
+const workspaceRoutes = require("./routes/WorkspaceRoute");
 
 function createApp() {
 	const app = express();
@@ -20,6 +21,7 @@ function createApp() {
 	app.get("/api/docs.json", (_req, res) => res.json(swaggerSpec));
 
 	app.use("/api/auth", authRoutes);
+	app.use("/api/workspaces", workspaceRoutes);
 	app.use("/api/channels", channelRoutes);
 
 	// eslint-disable-next-line no-unused-vars
