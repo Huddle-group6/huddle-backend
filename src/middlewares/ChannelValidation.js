@@ -3,9 +3,10 @@ const validateCreateChannelInput = (req, res, next) => {
 	if (!name || !name.trim()) {
 		return res.status(400).json({ message: "Channel name is required" });
 	}
-	if (!/^[a-z0-9-]{2,64}$/.test(name)) {
+	if (!/^(?=.{2,64}$)[A-Za-z]+(?: [A-Za-z]+)*$/.test(name.trim())) {
 		return res.status(400).json({
-			message: "Channel name must be 2-64 characters: lowercase letters, numbers and '-' only",
+			message:
+				"Channel name must be 2-64 characters: uppercase and lowercase letters with spaces only, no numbers or special characters",
 		});
 	}
 	next();
@@ -17,7 +18,9 @@ const validateSendMessageInput = (req, res, next) => {
 		return res.status(400).json({ message: "Message body is required" });
 	}
 	if (body.length > 4000) {
-		return res.status(400).json({ message: "Message must be 4000 characters or fewer" });
+		return res
+			.status(400)
+			.json({ message: "Message must be 4000 characters or fewer" });
 	}
 	next();
 };
