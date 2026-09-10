@@ -1,0 +1,42 @@
+openapi: 3.0.3
+info:
+  title: Huddle API
+  version: 0.1.0
+  description: Authentication + channel messaging API (Sprint 1).
+servers:
+  - url: /api
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+  schemas:
+    Error:
+      type: object
+      properties:
+        status: { type: string, example: error }
+        message: { type: string, example: Something went wrong }
+    User:
+      type: object
+      properties:
+        id: { type: integer, example: 1 }
+        name: { type: string, example: Ada Lovelace }
+        email: { type: string, example: ada@example.com }
+        createdAt: { type: string, format: date-time }
+    Channel:
+      type: object
+      properties:
+        id: { type: integer, example: 1 }
+        name: { type: string, example: General Discussion }
+        description:
+          { type: string, nullable: true, example: General discussion }
+        createdAt: { type: string, format: date-time }
+    Message:
+      type: object
+      properties:
+        id: { type: integer, example: 1 }
+        body: { type: string, example: Hello everyone! }
+        channelId: { type: integer, example: 1 }
+        createdAt: { type: string, format: date-time }
+        author: { $ref: "#/components/schemas/User" }

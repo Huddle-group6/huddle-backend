@@ -7,3 +7,6 @@ npm-debug.log*
 
 .DS_Store
 *.log
+
+# prisma generated output
+generated/
