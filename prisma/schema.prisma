@@ -4,10 +4,8 @@ generator client {
 }
 
 datasource db {
-  provider  = "postgresql"
+  provider = "postgresql"
 }
-
-// --- Appendix B: Minimal Data Model ---------------------------------------
 
 model User {
   id           Int      @id @default(autoincrement())
@@ -16,11 +14,44 @@ model User {
   passwordHash String   @map("password_hash")
   createdAt    DateTime @default(now()) @map("created_at")
 
-  createdChannels Channel[]           @relation("ChannelCreator")
-  memberships     ChannelMembership[]
-  messages        Message[]
+  createdWorkspaces   Workspace[]           @relation("WorkspaceCreator")
+  workspaceMemberships WorkspaceMembership[]
+  createdChannels     Channel[]             @relation("ChannelCreator")
+  channelMemberships  ChannelMembership[]
+  messages            Message[]
 
   @@map("users")
+}
+
+// A workspace is where channels exist. Created explicitly by a user;
+// joined by anyone who has the workspace's id (no invite-code system yet —
+// that's a Sprint 2 concern, this is the minimum that makes isolation real).
+model Workspace {
+  id        Int      @id @default(autoincrement())
+  name      String   @db.VarChar(100)
+  createdBy Int      @map("created_by")
+  createdAt DateTime @default(now()) @map("created_at")
+
+  // createdBy identifies the owner for now — a real role system
+  // (owner/manager/member) is a later feature, not built yet.
+  creator     User                  @relation("WorkspaceCreator", fields: [createdBy], references: [id], onDelete: Cascade)
+  memberships WorkspaceMembership[]
+  channels    Channel[]
+
+  @@map("workspaces")
+}
+
+model WorkspaceMembership {
+  id          Int      @id @default(autoincrement())
+  userId      Int      @map("user_id")
+  workspaceId Int      @map("workspace_id")
+  joinedAt    DateTime @default(now()) @map("joined_at")
+
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  workspace Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, workspaceId])
+  @@map("workspace_memberships")
 }
 
 enum ChannelStatus {
@@ -30,16 +61,24 @@ enum ChannelStatus {
 
 model Channel {
   id          Int           @id @default(autoincrement())
-  name        String        @unique @db.VarChar(64)
-  description String?      @db.VarChar(280)
+  workspaceId Int           @map("workspace_id")
+  name        String        @db.VarChar(64)
+  description String?       @db.VarChar(280)
   createdBy   Int           @map("created_by")
+  // Set true only for the auto-created #general/#announcements channels —
+  // joining a workspace auto-joins you to these, not to every channel.
+  isDefault   Boolean       @default(false) @map("is_default")
   status      ChannelStatus @default(ACTIVE)
   createdAt   DateTime      @default(now()) @map("created_at")
 
+  workspace   Workspace           @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
   creator     User                @relation("ChannelCreator", fields: [createdBy], references: [id], onDelete: Cascade)
   memberships ChannelMembership[]
   messages    Message[]
 
+  // Channel names are unique per workspace now, not globally — every
+  // workspace gets its own #general, that's the whole point.
+  @@unique([workspaceId, name])
   @@map("channels")
 }
 
