@@ -3,25 +3,6 @@ const { ChannelService } = require("../../services/ChannelService");
 const channelService = new ChannelService();
 
 const ChannelController = {
-	async create(req, res, next) {
-		try {
-			const { name, description } = req.body;
-			const channel = await channelService.createChannel(name, description, req.user.id);
-			res.status(201).json({ status: "success", data: channel });
-		} catch (error) {
-			next(error);
-		}
-	},
-
-	async list(_req, res, next) {
-		try {
-			const channels = await channelService.listChannels();
-			res.status(200).json({ status: "success", data: channels });
-		} catch (error) {
-			next(error);
-		}
-	},
-
 	async join(req, res, next) {
 		try {
 			const channelId = Number(req.params.channelId);
