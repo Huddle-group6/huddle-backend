@@ -1,5 +1,7 @@
 const express = require("express");
 const cors = require("cors");
+const swaggerUi = require("swagger-ui-express");
+const swaggerSpec = require("./config/swagger");
 const authRoutes = require("./routes/AuthRoute");
 const channelRoutes = require("./routes/ChannelRoute");
 
@@ -12,6 +14,9 @@ function createApp() {
 	app.get("/api/health", (_req, res) => {
 		res.json({ status: "ok" });
 	});
+
+	app.use("/api/docs", swaggerUi.serve, swaggerUi.setup(swaggerSpec));
+	app.get("/api/docs.json", (_req, res) => res.json(swaggerSpec));
 
 	app.use("/api/auth", authRoutes);
 	app.use("/api/channels", channelRoutes);

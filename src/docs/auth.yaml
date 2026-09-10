@@ -1,0 +1,106 @@
+paths:
+  /auth/register:
+    post:
+      summary: Register a new user
+      tags: [Auth]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [name, email, password]
+              properties:
+                name: { type: string, example: Ada Lovelace }
+                email: { type: string, example: ada@example.com }
+                password:
+                  { type: string, format: password, example: supersecret123 }
+      responses:
+        201:
+          description: User registered successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status: { type: string, example: success }
+                  message:
+                    { type: string, example: User registered successfully }
+                  data:
+                    type: object
+                    properties:
+                      user: { $ref: "#/components/schemas/User" }
+                      token: { type: string }
+        400:
+          description: Validation error (missing/invalid name, email or password)
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Error" }
+        409:
+          description: Email already registered
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Error" }
+
+  /auth/login:
+    post:
+      summary: Log in with email and password
+      tags: [Auth]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [email, password]
+              properties:
+                email: { type: string, example: ada@example.com }
+                password:
+                  { type: string, format: password, example: supersecret123 }
+      responses:
+        200:
+          description: Login successful
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status: { type: string, example: success }
+                  message: { type: string, example: Login successful }
+                  data:
+                    type: object
+                    properties:
+                      user: { $ref: "#/components/schemas/User" }
+                      token: { type: string }
+        400:
+          description: Validation error (missing/invalid email or password)
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Error" }
+        401:
+          description: Invalid credentials
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Error" }
+
+  /auth/profile:
+    get:
+      summary: Get the authenticated user's profile
+      tags: [Auth]
+      security:
+        - bearerAuth: []
+      responses:
+        200:
+          description: Current user's profile
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status: { type: string, example: success }
+                  data: { $ref: "#/components/schemas/User" }
+        401:
+          description: Missing, malformed or invalid/expired token
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Error" }

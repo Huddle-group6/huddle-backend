@@ -19,6 +19,10 @@ router.post("/:channelId/join", ChannelController.join);
 // service layer (requireMembership), not here, so both REST and the
 // Socket.IO join handler share the exact same check.
 router.get("/:channelId/messages", ChannelController.listMessages);
-router.post("/:channelId/messages", validateSendMessageInput, ChannelController.sendMessage);
+router.post(
+	"/:channelId/messages",
+	validateSendMessageInput,
+	ChannelController.sendMessage,
+);
 
 module.exports = router;
