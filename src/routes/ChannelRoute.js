@@ -1,18 +1,16 @@
 const express = require("express");
 const ChannelController = require("../controllers/Channel/ChannelController");
 const { authValidation } = require("../middlewares/AuthValidation");
-const {
-	validateCreateChannelInput,
-	validateSendMessageInput,
-} = require("../middlewares/ChannelValidation");
+const { validateSendMessageInput } = require("../middlewares/ChannelValidation");
 
 const router = express.Router();
 
 // Every route below requires a signed-in user.
 router.use(authValidation);
 
-router.get("/", ChannelController.list);
-router.post("/", validateCreateChannelInput, ChannelController.create);
+// Listing/creating channels now lives under /workspaces/:workspaceId/channels
+// — a channel only ever exists inside a workspace. These routes act on a
+// specific, already-known channel by its own id.
 router.post("/:channelId/join", ChannelController.join);
 
 // Messaging lives under its channel — membership is enforced in the
