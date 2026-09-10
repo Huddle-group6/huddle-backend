@@ -10,6 +10,11 @@ const mockAuthService = {
 jest.mock("../src/services/AuthService", () => ({
 	AuthService: jest.fn(() => mockAuthService),
 }));
+// app.js also wires up channel routes — mock that service too so this
+// suite doesn't transitively touch the real Prisma client.
+jest.mock("../src/services/ChannelService", () => ({
+	ChannelService: jest.fn(() => ({})),
+}));
 
 const createApp = require("../src/app");
 
