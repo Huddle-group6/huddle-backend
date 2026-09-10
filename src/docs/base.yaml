@@ -28,7 +28,7 @@ components:
       type: object
       properties:
         id: { type: integer, example: 1 }
-        name: { type: string, example: general }
+        name: { type: string, example: General Discussion }
         description:
           { type: string, nullable: true, example: General discussion }
         createdAt: { type: string, format: date-time }

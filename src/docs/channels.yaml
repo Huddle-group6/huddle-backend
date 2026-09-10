@@ -35,7 +35,7 @@ paths:
               type: object
               required: [name]
               properties:
-                name: { type: string, example: general }
+                name: { type: string, example: General Discussion }
                 description: { type: string, example: General discussion }
       responses:
         201:
