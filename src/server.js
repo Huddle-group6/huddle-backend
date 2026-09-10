@@ -10,7 +10,7 @@ async function main() {
 	const app = createApp();
 	const server = http.createServer(app);
 
-	const io = new Server(server, { cors: { origin: "*" } });
+	const io = new Server(server, { cors: { origin: env.clientOrigin, credentials: true } });
 	initSockets(io);
 	// Controllers reach the io instance via req.app.get('io') to broadcast
 	// a persisted message without importing the socket layer directly.

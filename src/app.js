@@ -2,13 +2,14 @@ const express = require("express");
 const cors = require("cors");
 const swaggerUi = require("swagger-ui-express");
 const swaggerSpec = require("./config/swagger");
+const env = require("./config/env");
 const authRoutes = require("./routes/AuthRoute");
 const channelRoutes = require("./routes/ChannelRoute");
 
 function createApp() {
 	const app = express();
 
-	app.use(cors());
+	app.use(cors({ origin: env.clientOrigin, credentials: true }));
 	app.use(express.json());
 
 	app.get("/api/health", (_req, res) => {
