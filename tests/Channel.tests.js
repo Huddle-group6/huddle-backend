@@ -4,8 +4,6 @@ const mockAuthService = {
 	verifyToken: jest.fn(),
 };
 const mockChannelService = {
-	createChannel: jest.fn(),
-	listChannels: jest.fn(),
 	joinChannel: jest.fn(),
 	sendMessage: jest.fn(),
 	listMessages: jest.fn(),
@@ -16,6 +14,11 @@ jest.mock("../src/services/AuthService", () => ({
 }));
 jest.mock("../src/services/ChannelService", () => ({
 	ChannelService: jest.fn(() => mockChannelService),
+}));
+// app.js also wires workspace routes — mock that service too so this
+// suite doesn't transitively touch the real Prisma client.
+jest.mock("../src/services/WorkspaceService", () => ({
+	WorkspaceService: jest.fn(() => ({})),
 }));
 
 const createApp = require("../src/app");
@@ -35,34 +38,8 @@ describe("Channel API", () => {
 	});
 
 	it("rejects unauthenticated requests", async () => {
-		const response = await request(app).get("/api/channels");
+		const response = await request(app).post("/api/channels/1/join");
 		expect(response.status).toBe(401);
-	});
-
-	describe("POST /api/channels", () => {
-		it("creates a channel", async () => {
-			const channel = { id: 1, name: "general", createdBy: 1 };
-			mockChannelService.createChannel.mockResolvedValue(channel);
-
-			const response = await request(app)
-				.post("/api/channels")
-				.set(AUTH_HEADER)
-				.send({ name: "general" });
-
-			expect(response.status).toBe(201);
-			expect(response.body.data).toEqual(channel);
-			expect(mockChannelService.createChannel).toHaveBeenCalledWith("general", undefined, 1);
-		});
-
-		it("rejects an invalid channel name", async () => {
-			const response = await request(app)
-				.post("/api/channels")
-				.set(AUTH_HEADER)
-				.send({ name: "Not Valid!" });
-
-			expect(response.status).toBe(400);
-			expect(mockChannelService.createChannel).not.toHaveBeenCalled();
-		});
 	});
 
 	describe("POST /api/channels/:channelId/join", () => {
@@ -76,6 +53,18 @@ describe("Channel API", () => {
 
 			expect(response.status).toBe(201);
 			expect(mockChannelService.joinChannel).toHaveBeenCalledWith(1, 1);
+		});
+
+		it("surfaces a 403 when not a workspace member", async () => {
+			const AppError = require("../src/utils/AppError");
+			mockChannelService.joinChannel.mockRejectedValue(
+				new AppError("You must join this workspace before doing that", 403),
+			);
+
+			const response = await request(app).post("/api/channels/1/join").set(AUTH_HEADER);
+
+			expect(response.status).toBe(403);
+			expect(response.body.message).toBe("You must join this workspace before doing that");
 		});
 	});
 
