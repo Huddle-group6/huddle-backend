@@ -1,14 +1,20 @@
 const prisma = require("../config/database");
 const AppError = require("../utils/AppError");
+const { WorkspaceService } = require("./WorkspaceService");
 
+const workspaceService = new WorkspaceService();
 const MESSAGE_PAGE_SIZE = 50;
 
 class ChannelService {
-	// B1 — Create a Channel
-	async createChannel(name, description, creatorId) {
-		const existing = await prisma.channel.findUnique({ where: { name } });
+	// B1 — Create a Channel (now scoped to a workspace)
+	async createChannel(workspaceId, name, description, creatorId) {
+		await workspaceService.requireMembership(workspaceId, creatorId);
+
+		const existing = await prisma.channel.findUnique({
+			where: { workspaceId_name: { workspaceId, name } },
+		});
 		if (existing) {
-			throw new AppError(`A channel named "${name}" already exists`, 409);
+			throw new AppError(`A channel named "${name}" already exists in this workspace`, 409);
 		}
 
 		// The creator is automatically a member (PRD B1: "the channel exists
@@ -16,7 +22,7 @@ class ChannelService {
 		// transaction so a crash can't leave a channel with zero members.
 		const channel = await prisma.$transaction(async (tx) => {
 			const created = await tx.channel.create({
-				data: { name, description, createdBy: creatorId },
+				data: { name, description, workspaceId, createdBy: creatorId },
 			});
 			await tx.channelMembership.create({
 				data: { userId: creatorId, channelId: created.id },
@@ -27,11 +33,13 @@ class ChannelService {
 		return channel;
 	}
 
-	// Every channel is listable in this sprint — there's no workspace
-	// boundary yet (that's Product Backlog), so "list channels" means
-	// "every channel that exists".
-	async listChannels() {
+	// Channels are scoped to a workspace now — you only ever see the
+	// channels of a workspace you're already in.
+	async listChannels(workspaceId, userId) {
+		await workspaceService.requireMembership(workspaceId, userId);
+
 		return prisma.channel.findMany({
+			where: { workspaceId },
 			orderBy: { createdAt: "asc" },
 			include: { creator: { select: { id: true, name: true } } },
 		});
@@ -43,6 +51,10 @@ class ChannelService {
 		if (!channel) {
 			throw new AppError("Channel not found", 404);
 		}
+		// You must already be in the channel's workspace before you can
+		// join one of its channels — workspace membership is the outer
+		// boundary, channel membership is the inner one.
+		await workspaceService.requireMembership(channel.workspaceId, userId);
 
 		const existingMembership = await prisma.channelMembership.findUnique({
 			where: { userId_channelId: { userId, channelId } },
