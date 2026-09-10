@@ -1,0 +1,196 @@
+paths:
+  /workspaces:
+    get:
+      summary: List workspaces the caller belongs to
+      tags: [Workspaces]
+      security:
+        - bearerAuth: []
+      responses:
+        200:
+          description: List of workspaces
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status: { type: string, example: success }
+                  data:
+                    type: array
+                    items: { $ref: "#/components/schemas/Workspace" }
+        401:
+          description: Missing, malformed or invalid/expired token
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Error" }
+    post:
+      summary: Create a workspace
+      description: >
+        Auto-provisions #general and #announcements inside the new
+        workspace and makes the creator a member of both.
+      tags: [Workspaces]
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [name]
+              properties:
+                name: { type: string, example: Acme Corp }
+      responses:
+        201:
+          description: Workspace created
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status: { type: string, example: success }
+                  data: { $ref: "#/components/schemas/Workspace" }
+        400:
+          description: Validation error (missing/invalid workspace name)
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Error" }
+        401:
+          description: Missing, malformed or invalid/expired token
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Error" }
+
+  /workspaces/{workspaceId}/join:
+    post:
+      summary: Join a workspace by id
+      description: >
+        No invite-code system yet — join by knowing the workspace's id.
+        Auto-joins the caller to that workspace's default channels
+        (#general, #announcements).
+      tags: [Workspaces]
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: workspaceId
+          required: true
+          schema: { type: integer }
+      responses:
+        200:
+          description: Already a member of the workspace
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status: { type: string, example: success }
+                  data:
+                    type: object
+                    properties:
+                      alreadyMember: { type: boolean, example: true }
+        201:
+          description: Successfully joined the workspace
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status: { type: string, example: success }
+                  data:
+                    type: object
+                    properties:
+                      alreadyMember: { type: boolean, example: false }
+        401:
+          description: Missing, malformed or invalid/expired token
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Error" }
+        404:
+          description: Workspace not found
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Error" }
+
+  /workspaces/{workspaceId}/channels:
+    get:
+      summary: List channels in a workspace
+      tags: [Workspaces]
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: workspaceId
+          required: true
+          schema: { type: integer }
+      responses:
+        200:
+          description: List of channels in the workspace
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status: { type: string, example: success }
+                  data:
+                    type: array
+                    items: { $ref: "#/components/schemas/Channel" }
+        401:
+          description: Missing, malformed or invalid/expired token
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Error" }
+        403:
+          description: Not a member of this workspace
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Error" }
+    post:
+      summary: Create a new channel inside a workspace
+      tags: [Workspaces]
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: workspaceId
+          required: true
+          schema: { type: integer }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [name]
+              properties:
+                name: { type: string, example: General Discussion }
+                description: { type: string, example: General discussion }
+      responses:
+        201:
+          description: Channel created
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status: { type: string, example: success }
+                  data: { $ref: "#/components/schemas/Channel" }
+        400:
+          description: Validation error (missing/invalid channel name)
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Error" }
+        401:
+          description: Missing, malformed or invalid/expired token
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Error" }
+        403:
+          description: Not a member of this workspace
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Error" }
+        409:
+          description: A channel with that name already exists in this workspace
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Error" }
