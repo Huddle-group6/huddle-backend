@@ -8,9 +8,21 @@ if (missing.length) {
 	throw new Error(`Missing required environment variable(s): ${missing.join(", ")}`);
 }
 
+const isProduction = process.env.NODE_ENV === "production";
+
+// Wide-open CORS ("*") is fine for local dev but not for a deployed API —
+// require a real origin once this is actually live, same fail-fast
+// treatment as the secrets above.
+if (isProduction && !process.env.CLIENT_ORIGIN) {
+	throw new Error(
+		"Missing required environment variable: CLIENT_ORIGIN (needed to lock down CORS in production)",
+	);
+}
+
 module.exports = {
 	port: Number(process.env.PORT) || 4000,
 	jwtSecret: process.env.JWT_SECRET,
 	jwtExpiresIn: process.env.JWT_EXPIRES_IN || "3d",
-	isProduction: process.env.NODE_ENV === "production",
+	clientOrigin: process.env.CLIENT_ORIGIN || "*",
+	isProduction,
 };
