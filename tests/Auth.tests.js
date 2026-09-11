@@ -15,6 +15,9 @@ jest.mock("../src/services/AuthService", () => ({
 jest.mock("../src/services/ChannelService", () => ({
 	ChannelService: jest.fn(() => ({})),
 }));
+jest.mock("../src/services/WorkspaceService", () => ({
+	WorkspaceService: jest.fn(() => ({})),
+}));
 
 const createApp = require("../src/app");
 

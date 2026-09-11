@@ -24,6 +24,13 @@ components:
         name: { type: string, example: Ada Lovelace }
         email: { type: string, example: ada@example.com }
         createdAt: { type: string, format: date-time }
+    Workspace:
+      type: object
+      properties:
+        id: { type: integer, example: 1 }
+        name: { type: string, example: Acme Corp }
+        createdBy: { type: integer, example: 1 }
+        createdAt: { type: string, format: date-time }
     Channel:
       type: object
       properties:

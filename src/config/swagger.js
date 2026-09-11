@@ -9,7 +9,7 @@ const base = yaml.load(
 
 // Each route group keeps its own yaml file; `paths` from all of them are
 // merged onto the shared `base` spec (info/components/security schemes).
-const routeSpecs = ["auth.yaml", "channels.yaml"].map((file) =>
+const routeSpecs = ["auth.yaml", "workspaces.yaml", "channels.yaml"].map((file) =>
 	yaml.load(fs.readFileSync(path.join(docsDir, file), "utf8")),
 );
 
