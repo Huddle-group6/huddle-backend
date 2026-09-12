@@ -15,7 +15,8 @@ ADD COLUMN     "workspace_id" INTEGER NOT NULL;
 -- CreateTable
 CREATE TABLE "workspaces" (
     "id" SERIAL NOT NULL,
-    "name" VARCHAR(100) NOT NULL,
+    "invite_id" VARCHAR(64) UNIQUE NOT NULL,
+    "name" VARCHAR(100) UNIQUE NOT NULL,
     "created_by" INTEGER NOT NULL,
     "created_at" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
 
