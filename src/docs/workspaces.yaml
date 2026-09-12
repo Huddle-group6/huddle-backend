@@ -111,6 +111,58 @@ paths:
             application/json:
               schema: { $ref: "#/components/schemas/Error" }
 
+  /workspaces/{workspaceId}:
+    patch:
+      summary: Update a workspace
+      description: Update the name of a workspace the caller belongs to.
+      tags: [Workspaces]
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: workspaceId
+          required: true
+          schema: { type: integer }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [name]
+              properties:
+                name: { type: string, example: Acme Corporation }
+      responses:
+        200:
+          description: Workspace updated
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status: { type: string, example: success }
+                  data: { $ref: "#/components/schemas/Workspace" }
+        400:
+          description: Validation error (missing/invalid workspace name)
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Error" }
+        401:
+          description: Missing, malformed or invalid/expired token
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Error" }
+        403:
+          description: Not authorized to update this workspace
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Error" }
+        404:
+          description: Workspace not found
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Error" }
+
   /workspaces/{workspaceId}/channels:
     get:
       summary: List channels in a workspace

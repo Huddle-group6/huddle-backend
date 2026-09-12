@@ -31,8 +31,8 @@ const WorkspaceController = {
 		try {
 			const workspaceId = String(req.params.workspaceId);
 			const result = await workspaceService.joinWorkspace(
-				workspaceId,
 				req.user.id,
+				workspaceId,
 			);
 			res
 				.status(result.alreadyMember ? 200 : 201)
