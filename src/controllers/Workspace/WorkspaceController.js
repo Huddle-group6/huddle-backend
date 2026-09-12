@@ -8,7 +8,10 @@ const WorkspaceController = {
 	async create(req, res, next) {
 		try {
 			const { name } = req.body;
-			const workspace = await workspaceService.createWorkspace(name, req.user.id);
+			const workspace = await workspaceService.createWorkspace(
+				name,
+				req.user.id,
+			);
 			res.status(201).json({ status: "success", data: workspace });
 		} catch (error) {
 			next(error);
@@ -26,9 +29,14 @@ const WorkspaceController = {
 
 	async join(req, res, next) {
 		try {
-			const workspaceId = Number(req.params.workspaceId);
-			const result = await workspaceService.joinWorkspace(workspaceId, req.user.id);
-			res.status(result.alreadyMember ? 200 : 201).json({ status: "success", data: result });
+			const workspaceId = String(req.params.workspaceId);
+			const result = await workspaceService.joinWorkspace(
+				workspaceId,
+				req.user.id,
+			);
+			res
+				.status(result.alreadyMember ? 200 : 201)
+				.json({ status: "success", data: result });
 		} catch (error) {
 			next(error);
 		}
@@ -37,7 +45,10 @@ const WorkspaceController = {
 	async listChannels(req, res, next) {
 		try {
 			const workspaceId = Number(req.params.workspaceId);
-			const channels = await channelService.listChannels(workspaceId, req.user.id);
+			const channels = await channelService.listChannels(
+				workspaceId,
+				req.user.id,
+			);
 			res.status(200).json({ status: "success", data: channels });
 		} catch (error) {
 			next(error);

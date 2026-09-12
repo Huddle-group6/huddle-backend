@@ -1,5 +1,13 @@
+const { v4: uuidv4 } = require("uuid");
 const prisma = require("../config/database");
 const AppError = require("../utils/AppError");
+
+// Generates an invite id shaped like "wdu-khdo-dum" (three 4/4/3-char
+// segments) derived from a UUID, keeping the same fixed length every time.
+function generateInviteId() {
+	const hex = uuidv4().replace(/-/g, "").toUpperCase();
+	return `${hex.slice(0, 4)}-${hex.slice(4, 8)}-${hex.slice(8, 11)}`;
+}
 
 const DEFAULT_CHANNELS = ["general", "announcements"];
 
@@ -8,9 +16,17 @@ class WorkspaceService {
 	// #general and #announcements with the creator already in both — a new
 	// workspace should never open onto an empty channel list.
 	async createWorkspace(name, creatorId) {
+		const existingWorkspace = await prisma.workspace.findFirst({
+			where: { name },
+		});
+		if (existingWorkspace) {
+			throw new AppError("Workspace with this name already exists", 400);
+		}
+
+		const inviteId = generateInviteId();
 		return prisma.$transaction(async (tx) => {
 			const workspace = await tx.workspace.create({
-				data: { name, createdBy: creatorId },
+				data: { inviteId, name, createdBy: creatorId },
 			});
 
 			await tx.workspaceMembership.create({
@@ -57,13 +73,15 @@ class WorkspaceService {
 	// #announcements), matching how a new member actually starts
 	// participating — other channels still require an explicit join.
 	async joinWorkspace(workspaceId, userId) {
-		const workspace = await prisma.workspace.findUnique({ where: { id: workspaceId } });
+		const workspace = await prisma.workspace.findUnique({
+			where: { inviteId: workspaceId },
+		});
 		if (!workspace) {
 			throw new AppError("Workspace not found", 404);
 		}
 
 		const existingMembership = await prisma.workspaceMembership.findUnique({
-			where: { userId_workspaceId: { userId, workspaceId } },
+			where: { userId_workspaceId: { userId, workspaceId: workspace.id } },
 		});
 		if (existingMembership) {
 			return { membership: existingMembership, alreadyMember: true };
@@ -71,11 +89,11 @@ class WorkspaceService {
 
 		const membership = await prisma.$transaction(async (tx) => {
 			const created = await tx.workspaceMembership.create({
-				data: { userId, workspaceId },
+				data: { userId, workspaceId: workspace.id },
 			});
 
 			const defaultChannels = await tx.channel.findMany({
-				where: { workspaceId, isDefault: true },
+				where: { workspaceId: workspace.id, isDefault: true },
 			});
 			for (const channel of defaultChannels) {
 				await tx.channelMembership.upsert({
