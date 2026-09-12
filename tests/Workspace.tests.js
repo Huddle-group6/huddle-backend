@@ -44,7 +44,12 @@ describe("Workspace API", () => {
 
 	describe("POST /api/workspaces", () => {
 		it("creates a workspace", async () => {
-			const workspace = { id: 1, name: "Acme Corp", createdBy: 1 };
+			const workspace = {
+				id: 1,
+				inviteID: "some-invite-id",
+				name: "Acme Corp",
+				createdBy: 1,
+			};
 			mockWorkspaceService.createWorkspace.mockResolvedValue(workspace);
 
 			const response = await request(app)
@@ -54,11 +59,17 @@ describe("Workspace API", () => {
 
 			expect(response.status).toBe(201);
 			expect(response.body.data).toEqual(workspace);
-			expect(mockWorkspaceService.createWorkspace).toHaveBeenCalledWith("Acme Corp", 1);
+			expect(mockWorkspaceService.createWorkspace).toHaveBeenCalledWith(
+				"Acme Corp",
+				1,
+			);
 		});
 
 		it("rejects a missing name", async () => {
-			const response = await request(app).post("/api/workspaces").set(AUTH_HEADER).send({});
+			const response = await request(app)
+				.post("/api/workspaces")
+				.set(AUTH_HEADER)
+				.send({});
 
 			expect(response.status).toBe(400);
 			expect(mockWorkspaceService.createWorkspace).not.toHaveBeenCalled();
@@ -67,9 +78,13 @@ describe("Workspace API", () => {
 
 	describe("GET /api/workspaces", () => {
 		it("lists the caller's workspaces only", async () => {
-			mockWorkspaceService.listWorkspaces.mockResolvedValue([{ id: 1, name: "Acme Corp" }]);
+			mockWorkspaceService.listWorkspaces.mockResolvedValue([
+				{ id: 1, name: "Acme Corp" },
+			]);
 
-			const response = await request(app).get("/api/workspaces").set(AUTH_HEADER);
+			const response = await request(app)
+				.get("/api/workspaces")
+				.set(AUTH_HEADER);
 
 			expect(response.status).toBe(200);
 			expect(mockWorkspaceService.listWorkspaces).toHaveBeenCalledWith(1);
@@ -79,14 +94,19 @@ describe("Workspace API", () => {
 	describe("POST /api/workspaces/:workspaceId/join", () => {
 		it("joins a workspace by id", async () => {
 			mockWorkspaceService.joinWorkspace.mockResolvedValue({
-				membership: { userId: 1, workspaceId: 1 },
+				membership: { userId: 1, inviteID: "some-invite-id" },
 				alreadyMember: false,
 			});
 
-			const response = await request(app).post("/api/workspaces/1/join").set(AUTH_HEADER);
+			const response = await request(app)
+				.post("/api/workspaces/some-invite-id/join")
+				.set(AUTH_HEADER);
 
 			expect(response.status).toBe(201);
-			expect(mockWorkspaceService.joinWorkspace).toHaveBeenCalledWith(1, 1);
+			expect(mockWorkspaceService.joinWorkspace).toHaveBeenCalledWith(
+				1,
+				"some-invite-id",
+			);
 		});
 
 		it("returns 404 for a workspace that doesn't exist", async () => {
@@ -95,7 +115,9 @@ describe("Workspace API", () => {
 				new AppError("Workspace not found", 404),
 			);
 
-			const response = await request(app).post("/api/workspaces/999/join").set(AUTH_HEADER);
+			const response = await request(app)
+				.post("/api/workspaces/999/join")
+				.set(AUTH_HEADER);
 
 			expect(response.status).toBe(404);
 		});
@@ -140,7 +162,12 @@ describe("Workspace API", () => {
 				.send({ name: "random" });
 
 			expect(response.status).toBe(201);
-			expect(mockChannelService.createChannel).toHaveBeenCalledWith(1, "random", undefined, 1);
+			expect(mockChannelService.createChannel).toHaveBeenCalledWith(
+				1,
+				"random",
+				undefined,
+				1,
+			);
 		});
 
 		it("rejects an invalid channel name", async () => {
